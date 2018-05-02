@@ -37,7 +37,10 @@ import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
 import android.arch.lifecycle.ViewModelProvider;
 import android.bluetooth.BluetoothDevice;
+import android.content.res.Resources;
+import android.nfc.Tag;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import no.nordicsemi.android.blinky.R;
 import no.nordicsemi.android.blinky.adapter.ExtendedBluetoothDevice;
@@ -48,6 +51,7 @@ import no.nordicsemi.android.log.LogSession;
 import no.nordicsemi.android.log.Logger;
 
 public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCallbacks {
+	private  final  String TAG="BlinkyViewModel";
 	private final BlinkyManager mBlinkyManager;
 
 	// Connection states Connecting, Connected, Disconnecting, Disconnected etc.
@@ -58,12 +62,19 @@ public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCa
 
 	// Flag to determine if the device is ready
 	private final MutableLiveData<Void> mOnDeviceReady = new MutableLiveData<>();
-
+	// Flag that holds the pressed released state of the button on the devkit. Pressed is true, Released is False
+	private final MutableLiveData<Boolean> mButtonState = new MutableLiveData<>();
 	// Flag that holds the on off state of the LED. On is true, Off is False
 	private final MutableLiveData<Boolean> mLEDState = new MutableLiveData<>();
 
-	// Flag that holds the pressed released state of the button on the devkit. Pressed is true, Released is False
-	private final MutableLiveData<Boolean> mButtonState = new MutableLiveData<>();
+	// Flag that holds the on off state of the pump. On is turn on, Off is turn off
+	private final MutableLiveData<Boolean> mPUMPState = new MutableLiveData<>();
+	// Flag that holds the on off state of the pump. On is turn on, Off is turn off
+	private final MutableLiveData<Boolean> mSLOWState = new MutableLiveData<>();
+	// Flag that holds the on off state of the pump. On is turn on, Off is turn off
+	private final MutableLiveData<Boolean> mFASTState = new MutableLiveData<>();
+	// Flag that holds the on off state of the pump. On is turn on, Off is turn off
+	private final MutableLiveData<Boolean> mPowerState = new MutableLiveData<>();
 
 	public LiveData<Void> isDeviceReady() {
 		return mOnDeviceReady;
@@ -75,6 +86,22 @@ public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCa
 
 	public LiveData<Boolean> isConnected() {
 		return mIsConnected;
+	}
+
+	public LiveData<Boolean> getSLOWState() {
+		return mSLOWState;
+	}
+
+	public LiveData<Boolean> getFASTState() {
+		return mFASTState;
+	}
+
+	public LiveData<Boolean> getPUMPState() {
+		return mPUMPState;
+	}
+
+	public LiveData<Boolean> getPowerState() {
+		return mPowerState;
 	}
 
 	public LiveData<Boolean> getButtonState() {
@@ -114,6 +141,83 @@ public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCa
 		mLEDState.setValue(onOff);
 	}
 
+
+	/*
+	*	send cmd to device for pump turn on or off
+	*/
+	public void togglePump(final boolean onOff) {
+		int icmd =0;
+		Resources res = getApplication().getResources();
+		int b=R.integer.start_fastturn;
+		Log.v(TAG,"b="+b);
+		if (onOff==true)	//send turn on cmd to cooler
+		{
+			icmd = res.getInteger(R.integer.start_pump);
+			Log.v(TAG,"ipcmd="+icmd);
+			Log.v(TAG,"cmd="+onOff);
+		}
+		else				// send turn of to cooler
+		{
+			icmd = res.getInteger(R.integer.stop_pump);
+			Log.v(TAG,"ipcmd="+icmd);
+			Log.v(TAG,"cmd="+onOff);
+		}
+		// send cmd via BLE to device
+		mBlinkyManager.sendCMDtoThermostat(icmd);
+	}
+	/*
+	 *	send cmd to device for Fast turn on or off
+	 */
+	public void toggleFast(final boolean onOff) {
+		int icmd =0;
+		Resources res = getApplication().getResources();
+
+		if (onOff==true)	//send turn on cmd to cooler
+		{
+			icmd = res.getInteger(R.integer.start_fastturn);
+			Log.v(TAG,"ipcmd="+icmd);
+			Log.v(TAG,"cmd="+onOff);
+		}
+		else				// send turn of to cooler
+		{
+			icmd = res.getInteger(R.integer.stop_fastturn);
+			Log.v(TAG,"ipcmd="+icmd);
+			Log.v(TAG,"cmd="+onOff);
+		}
+		// send cmd via BLE to device
+		mBlinkyManager.sendCMDtoThermostat(icmd);
+	}
+	/*
+	 *	send cmd to device for Slow turn on or off
+	 */
+	public void toggleSlow(final boolean onOff) {
+		int icmd =0;
+		Resources res = getApplication().getResources();
+
+		if (onOff==true)	//send turn on cmd to cooler
+		{
+			icmd = res.getInteger(R.integer.start_slowturn);
+			Log.v(TAG,"ipcmd="+icmd);
+			Log.v(TAG,"cmd="+onOff);
+		}
+		else				// send turn of to cooler
+		{
+			icmd = res.getInteger(R.integer.stop_slowturn);
+			Log.v(TAG,"ipcmd="+icmd);
+			Log.v(TAG,"cmd="+onOff);
+		}
+		// send cmd via BLE to device
+		mBlinkyManager.sendCMDtoThermostat(icmd);
+	}
+	/*
+	 *	send cmd to turn off device totally
+	 */
+	public void clickonPowerBut()
+	{
+		int icmd = getApplication().getResources().getInteger(R.integer.turnofdevice);
+		// send cmd via BLE to device
+		mBlinkyManager.sendCMDtoThermostat(icmd);
+	}
 	@Override
 	protected void onCleared() {
 		super.onCleared();
@@ -198,5 +302,41 @@ public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCa
 	@Override
 	public void onDeviceNotSupported(final BluetoothDevice device) {
 		// TODO implement
+	}
+
+	/*
+	 *   This function handle onwritecharterictic callback to update view
+	 *   if comand of turn on fast  send then view of slow should turn of and vice versa
+	 *   @para: data: data of last write to FF03 characteristic
+	 */
+	@Override
+	public void onHandleCMDtoFF03(int data)
+	{
+		// if cmd to turn on fast turn is received then turn of slow
+		if (data==getApplication().getResources().getInteger(R.integer.start_fastturn))
+		{
+			mSLOWState.postValue(false);
+			mPowerState.postValue(true);
+		}
+		// if cmd to turn on slow turn is received then turn of high
+		if (data==getApplication().getResources().getInteger(R.integer.start_slowturn))
+		{
+			mFASTState.postValue(false);
+			mPowerState.postValue(true);
+		}
+		// if cmd to turn on slow turn is received then turn of high
+		if (data==getApplication().getResources().getInteger(R.integer.start_pump))
+		{
+			mPowerState.postValue(true);
+		}
+		// if cmd to turn on slow turn is received then turn of high
+		if (data==getApplication().getResources().getInteger(R.integer.turnofdevice))
+		{
+			// update livedata (turning of all pump turn icon.
+			mFASTState.postValue(false);
+			mSLOWState.postValue(false);
+			mPUMPState.postValue(false);
+			mPowerState.postValue(false);
+		}
 	}
 }

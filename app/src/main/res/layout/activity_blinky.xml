@@ -63,7 +63,7 @@
 	<ScrollView
 		android:id="@+id/device_container"
 		android:layout_width="match_parent"
-		android:layout_height="match_parent"
+		android:layout_height="wrap_content"
 		android:layout_below="@+id/appbar_layout"
 		android:visibility="gone">
 
@@ -181,8 +181,36 @@
 						app:layout_constraintTop_toBottomOf="@+id/button_summary"/>
 				</android.support.constraint.ConstraintLayout>
 			</android.support.v7.widget.CardView>
+			<ToggleButton
+				android:id="@+id/idFasttrun"
+				android:layout_width="100dp"
+				android:layout_height="40dp"
+				android:text="Fasttrun"
+				android:textOff="FAST_OFF"
+				android:textOn="FAST_ON"/>
+			<ToggleButton
+				android:id="@+id/idSlowtrun"
+				android:layout_width="100dp"
+				android:layout_height="40dp"
+				android:text="Slowtrun"
+				android:textOff="SLOW_OFF"
+				android:textOn="SLOW_ON"/>
+			<ToggleButton
+				android:id="@+id/idPump"
+				android:layout_width="100dp"
+				android:layout_height="40dp"
+				android:text="idPump"
+				android:textOff="PUMP_OFF"
+				android:textOn="PUMP_ON" />
+			<Button
+				android:id="@+id/idPower"
+				android:layout_width="100dp"
+				android:layout_height="40dp"
+				android:text="Power"
+				android:textColor="@color/cardview_dark_background"/>
 		</LinearLayout>
 	</ScrollView>
+
 
 	<LinearLayout
 		android:id="@+id/progress_container"
@@ -207,5 +235,6 @@
 			android:layout_width="250dp"
 			android:layout_height="wrap_content"
 			android:indeterminate="true"/>
+
 	</LinearLayout>
 </RelativeLayout>

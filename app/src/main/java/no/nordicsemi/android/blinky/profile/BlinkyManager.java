@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.content.res.Resources;
 import android.util.Log;
 
 import java.util.Deque;
@@ -33,6 +34,7 @@ import java.util.LinkedList;
 import java.util.UUID;
 
 import no.nordicsemi.android.ble.BleManager;
+import no.nordicsemi.android.blinky.R;
 import no.nordicsemi.android.log.LogContract;
 
 public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
@@ -54,7 +56,7 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
 	 */
 	private final static UUID LBS_UUID_BUTTON_CHAR = UUID.fromString("0000ff02-0000-1000-8000-00805f9b34fb");
 
-	private BluetoothGattCharacteristic mButtonCharacteristic, mLedCharacteristic;
+	private BluetoothGattCharacteristic mButtonCharacteristic, mCMDCharacteristic;
 
 	public BlinkyManager(final Context context) {
 		super(context);
@@ -80,7 +82,7 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
 		@Override
 		protected Deque<Request> initGatt(final BluetoothGatt gatt) {
 			final LinkedList<Request> requests = new LinkedList<>();
-			requests.push(Request.newReadRequest(mLedCharacteristic));
+			requests.push(Request.newReadRequest(mCMDCharacteristic));
 			requests.push(Request.newReadRequest(mButtonCharacteristic));
 			requests.push(Request.newEnableNotificationsRequest(mButtonCharacteristic));
 			return requests;
@@ -91,29 +93,29 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
 			final BluetoothGattService service = gatt.getService(LBS_UUID_SERVICE);
 			if (service != null) {
 				mButtonCharacteristic = service.getCharacteristic(LBS_UUID_BUTTON_CHAR);
-				mLedCharacteristic = service.getCharacteristic(LBS_UUID_LED_CHAR);
+				mCMDCharacteristic = service.getCharacteristic(LBS_UUID_LED_CHAR);
 			}
 /*
 			boolean writeRequest = false;
-			if (mLedCharacteristic != null) {
-				final int rxProperties = mLedCharacteristic.getProperties();
+			if (mCMDCharacteristic != null) {
+				final int rxProperties = mCMDCharacteristic.getProperties();
 				writeRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
 			}
 */
-			//return mButtonCharacteristic != null && mLedCharacteristic != null && writeRequest;
-			return mLedCharacteristic != null;
+			//return mButtonCharacteristic != null && mCMDCharacteristic != null && writeRequest;
+			return mCMDCharacteristic != null;
 		}
 
 		@Override
 		protected void onDeviceDisconnected() {
 			mButtonCharacteristic = null;
-			mLedCharacteristic = null;
+			mCMDCharacteristic = null;
 		}
 
 		@Override
 		protected void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
 			final int data = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-			if (characteristic == mLedCharacteristic) {
+			if (characteristic == mCMDCharacteristic) {
 				final boolean ledOn = data == 0x01;
 				log(LogContract.Log.Level.APPLICATION, "LED " + (ledOn ? "ON" : "OFF"));
 				mCallbacks.onDataSent(ledOn);
@@ -122,15 +124,21 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
 				log(LogContract.Log.Level.APPLICATION, "Button " + (buttonPressed ? "pressed" : "released"));
 				mCallbacks.onDataReceived(buttonPressed);
 			}
+			Log.v(TAG,"Callback of Read");
 		}
 
 		@Override
 		public void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
 			// This method is only called for LED characteristic
 			final int data = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-			final boolean ledOn = data == 0x01;
-			log(LogContract.Log.Level.APPLICATION, "LED " + (ledOn ? "ON" : "OFF"));
-			mCallbacks.onDataSent(ledOn);
+			if (characteristic == mCMDCharacteristic)
+            {
+                final boolean ledOn = (data == 0x01);
+                log(LogContract.Log.Level.APPLICATION, "LED " + (ledOn ? "ON" : "OFF"));
+                mCallbacks.onDataSent(ledOn);
+                Log.v(TAG,"Callback of write");
+                mCallbacks.onHandleCMDtoFF03(data);
+            }
 		}
 
 		@Override
@@ -140,12 +148,13 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
 			final boolean buttonPressed = data == 0x01;
 			log(LogContract.Log.Level.APPLICATION, "Button " + (buttonPressed ? "pressed" : "released"));
 			mCallbacks.onDataReceived(buttonPressed);
+            Log.v(TAG,"Callback of Notification");
 		}
 	};
 
 	public void send(final boolean onOff) {
 		// Are we connected?
-		if (mLedCharacteristic == null)
+		if (mCMDCharacteristic == null)
 			return;
 		/* only for test */
 		boolean i=readCharacteristic(mButtonCharacteristic);
@@ -156,8 +165,23 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
         Log.v(TAG,"val read array="+val2[0]);
         /*****************/
 		final byte[] command = new byte[] {(byte) (onOff ? 1 : 0)};
-		mLedCharacteristic.setValue(command);
+		mCMDCharacteristic.setValue(command);
 		log(LogContract.Log.Level.WARNING, "Turning LED " + (onOff ? "ON" : "OFF") + "...");
-		writeCharacteristic(mLedCharacteristic);
+		writeCharacteristic(mCMDCharacteristic);
 	}
+
+    /*
+    *   This function send cmd to pheripheral device
+    *   it will send to FF03 GATT characteristic.
+    *   @para: cmd : command type to device
+    */
+    public void sendCMDtoThermostat(int cmd)
+    {
+        final byte[] command= new byte[] {(byte) cmd};
+        mCMDCharacteristic.setValue(command);
+        Log.v(TAG,"send cmd="+command.toString());
+        writeCharacteristic(mCMDCharacteristic);
+    }
+
+
 }
