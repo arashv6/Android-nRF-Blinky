@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.util.Log;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -35,18 +36,23 @@ import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.log.LogContract;
 
 public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
+    private final String TAG="BlinkyManager";
 	/**
 	 * Nordic Blinky Service UUID
 	 */
-	public final static UUID LBS_UUID_SERVICE = UUID.fromString("00001523-1212-efde-1523-785feabcd123");
+	public final static UUID LBS_UUID_SERVICE = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb");
+	/*
+	* Mask for UUID
+	 */
+    public final static UUID LBS_UUID_SERVICE_MASK = UUID.fromString("0000ff00-0000-0000-0000-00000000000");
 	/**
 	 * BUTTON characteristic UUID
 	 */
-	private final static UUID LBS_UUID_BUTTON_CHAR = UUID.fromString("00001524-1212-efde-1523-785feabcd123");
+	private final static UUID LBS_UUID_LED_CHAR = UUID.fromString("0000ff03-0000-1000-8000-00805f9b34fb");
 	/**
 	 * LED characteristic UUID
 	 */
-	private final static UUID LBS_UUID_LED_CHAR = UUID.fromString("00001525-1212-efde-1523-785feabcd123");
+	private final static UUID LBS_UUID_BUTTON_CHAR = UUID.fromString("0000ff02-0000-1000-8000-00805f9b34fb");
 
 	private BluetoothGattCharacteristic mButtonCharacteristic, mLedCharacteristic;
 
@@ -87,14 +93,15 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
 				mButtonCharacteristic = service.getCharacteristic(LBS_UUID_BUTTON_CHAR);
 				mLedCharacteristic = service.getCharacteristic(LBS_UUID_LED_CHAR);
 			}
-
+/*
 			boolean writeRequest = false;
 			if (mLedCharacteristic != null) {
 				final int rxProperties = mLedCharacteristic.getProperties();
 				writeRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
 			}
-
-			return mButtonCharacteristic != null && mLedCharacteristic != null && writeRequest;
+*/
+			//return mButtonCharacteristic != null && mLedCharacteristic != null && writeRequest;
+			return mLedCharacteristic != null;
 		}
 
 		@Override
@@ -140,7 +147,14 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
 		// Are we connected?
 		if (mLedCharacteristic == null)
 			return;
-
+		/* only for test */
+		boolean i=readCharacteristic(mButtonCharacteristic);
+		Log.v(TAG,"readCond="+i);
+        int val= mButtonCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8,0);
+        Log.v(TAG,"val read="+val);
+        byte[] val2=mButtonCharacteristic.getValue();
+        Log.v(TAG,"val read array="+val2[0]);
+        /*****************/
 		final byte[] command = new byte[] {(byte) (onOff ? 1 : 0)};
 		mLedCharacteristic.setValue(command);
 		log(LogContract.Log.Level.WARNING, "Turning LED " + (onOff ? "ON" : "OFF") + "...");

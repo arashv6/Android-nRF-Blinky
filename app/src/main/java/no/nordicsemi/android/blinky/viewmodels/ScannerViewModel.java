@@ -39,6 +39,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationManager;
 import android.os.ParcelUuid;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,7 @@ import no.nordicsemi.android.support.v18.scanner.ScanResult;
 import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 
 public class ScannerViewModel extends AndroidViewModel {
-
+	private final static  String TAG="ScannerViewModel";
 	/** MutableLiveData containing the scanner state to notify MainActivity. */
 	private final ScannerLiveData mScannerLiveData;
 
@@ -95,7 +96,7 @@ public class ScannerViewModel extends AndroidViewModel {
 				// Refresh the devices list every second
 				.setReportDelay(0)
 				// Hardware filtering has some issues on selected devices
-				.setUseHardwareFilteringIfSupported(false)
+				.setUseHardwareBatchingIfSupported(false)
 				// Samsung S6 and S6 Edge report equal value of RSSI for all devices. In this app we ignore the RSSI.
 					/*.setUseHardwareBatchingIfSupported(false)*/
 				.build();
@@ -103,11 +104,23 @@ public class ScannerViewModel extends AndroidViewModel {
 		// Let's use the filter to scan only for Blinky devices
 		final ParcelUuid uuid = new ParcelUuid(BlinkyManager.LBS_UUID_SERVICE);
 		final List<ScanFilter> filters = new ArrayList<>();
-		filters.add(new ScanFilter.Builder().setServiceUuid(uuid).build());
-
+		/* Filter on UUID not work !!!!
+		ScanFilter aFilter = new ScanFilter.Builder()
+				.setServiceUuid(new ParcelUuid(BlinkyManager.LBS_UUID_SERVICE),
+								new ParcelUuid(BlinkyManager.LBS_UUID_SERVICE_MASK))
+				.setDeviceName("THERMOSTAT")
+				.build();
+		filters.add(aFilter);
+		*/
+		ScanFilter aFilter = new ScanFilter.Builder()
+				.setServiceUuid(null)
+				.setDeviceName("THERMOSTAT")
+				.build();
+		filters.add(aFilter);
 		final BluetoothLeScannerCompat scanner = BluetoothLeScannerCompat.getScanner();
 		scanner.startScan(filters, settings, scanCallback);
 		mScannerLiveData.scanningStarted();
+		Log.v(TAG, "start scanning"+filters.toString());
 	}
 
 	/**
@@ -127,6 +140,7 @@ public class ScannerViewModel extends AndroidViewModel {
 				Utils.markLocationNotRequired(getApplication());
 
 			mScannerLiveData.deviceDiscovered(result);
+			Log.v(TAG, "start scanning get result");
 		}
 
 		@Override
@@ -138,6 +152,7 @@ public class ScannerViewModel extends AndroidViewModel {
 		public void onScanFailed(final int errorCode) {
 			// TODO This should be handled
 			mScannerLiveData.scanningStopped();
+			Log.v(TAG, "scanning Failed");
 		}
 	};
 
