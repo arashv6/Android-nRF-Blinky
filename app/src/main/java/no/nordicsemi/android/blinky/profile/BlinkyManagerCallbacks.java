@@ -39,4 +39,16 @@ public interface BlinkyManagerCallbacks extends BleManagerCallbacks {
 	 * @param state true when LED was enabled, false when disabled
 	 */
 	void onDataSent(final boolean state);
+	/*
+	 *   This function handle onwritecharterictic callback to update view
+	 *   if comand of turn on fast  send then view of slow should turn of and vice versa
+	 *   @param: data: data of last write to FF03 characteristic
+	 */
+	void onHandleCMDtoFF03(int data);
+	/*
+	*	This Function update UI according to status sending from peripheral
+	*	@param: status according to SRS it will update UI.
+	*/
+	void onHandleGetStatus(int status);
+
 }

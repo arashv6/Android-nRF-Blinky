@@ -62,6 +62,7 @@ public class BlinkyActivity extends AppCompatActivity {
 		final String deviceName = device.getName();
 		final String deviceAddress = device.getAddress();
 
+		// Setting toolbar view
 		final Toolbar toolbar = findViewById(R.id.toolbar);
 		setSupportActionBar(toolbar);
 		getSupportActionBar().setTitle(deviceName);

@@ -2,11 +2,11 @@
 
 <resources>
     // never increase the store value grater than 127 becuase of casting ti byte problem
-    <integer name="turnofdevice">100</integer>
-    <integer name="start_fastturn">1</integer>
-    <integer name="stop_fastturn">2</integer>
-    <integer name="start_slowturn">3</integer>
-    <integer name="stop_slowturn">4</integer>
-    <integer name="start_pump">5</integer>
-    <integer name="stop_pump">6</integer>
+    <integer name="turnofdevice">110</integer>
+    <integer name="start_fastturn">11</integer>
+    <integer name="stop_fastturn">12</integer>
+    <integer name="start_slowturn">13</integer>
+    <integer name="stop_slowturn">14</integer>
+    <integer name="start_pump">15</integer>
+    <integer name="stop_pump">16</integer>
 </resources>

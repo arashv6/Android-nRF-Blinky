@@ -143,8 +143,8 @@ public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCa
 
 
 	/*
-	*	send cmd to device for pump turn on or off
-	*/
+	 *	send cmd to device for pump turn on or off
+	 */
 	public void togglePump(final boolean onOff) {
 		int icmd =0;
 		Resources res = getApplication().getResources();
@@ -186,6 +186,7 @@ public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCa
 		}
 		// send cmd via BLE to device
 		mBlinkyManager.sendCMDtoThermostat(icmd);
+		Log.v(TAG,"fast trigger");
 	}
 	/*
 	 *	send cmd to device for Slow turn on or off
@@ -218,6 +219,20 @@ public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCa
 		// send cmd via BLE to device
 		mBlinkyManager.sendCMDtoThermostat(icmd);
 	}
+	/*
+	 *	check the bit is set
+	 *	@param: n show the number of bit ro test
+	 * 	@param: ret if bit is set it rerturn true else false
+	 *   @Note: use for byte vars
+	 */
+	public boolean isBitSet(final int data,final int n)
+	{
+		if (((data & 0xff) & (1L<<n)) != 0)
+			return true;
+		else
+			return false;
+	}
+
 	@Override
 	protected void onCleared() {
 		super.onCleared();
@@ -338,5 +353,42 @@ public class BlinkyViewModel extends AndroidViewModel implements BlinkyManagerCa
 			mPUMPState.postValue(false);
 			mPowerState.postValue(false);
 		}
+	}
+	/*
+	 *	This Function update UI according to status sending from peripheral
+	 *	@param: status according to SRS it will update UI.
+	 */
+	@Override
+	public void onHandleGetStatus(int status)
+	{
+		Log.v(TAG,"status"+status+isBitSet(status,0)+isBitSet(status,1)+isBitSet(status,7));
+		if (isBitSet(status,0)) //fast turn is on
+		{mFASTState.postValue(true);}
+		else
+		{mFASTState.postValue(false);}
+
+		if (isBitSet(status,1)) //slow turn is on
+		{mSLOWState.postValue(true);}
+		else
+		{mSLOWState.postValue(false);}
+
+		if (isBitSet(status,2)) //Pump turn is on
+		{mPUMPState.postValue(true);}
+		else
+		{mPUMPState.postValue(false);}
+
+		if (isBitSet(status,3)) //temperature turn is on
+		{}
+		else
+		{}
+		if (isBitSet(status,4)) //timeCtr turn is on
+		{}
+		else
+		{}
+		if (isBitSet(status,7)) //power turn is on
+		{mPowerState.postValue(true);}
+		else
+		{mPowerState.postValue(false);}
+
 	}
 }

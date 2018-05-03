@@ -26,7 +26,6 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
-import android.content.res.Resources;
 import android.util.Log;
 
 import java.util.Deque;
@@ -34,67 +33,66 @@ import java.util.LinkedList;
 import java.util.UUID;
 
 import no.nordicsemi.android.ble.BleManager;
-import no.nordicsemi.android.blinky.R;
 import no.nordicsemi.android.log.LogContract;
 
 public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
     private final String TAG="BlinkyManager";
-	/**
-	 * Nordic Blinky Service UUID
-	 */
-	public final static UUID LBS_UUID_SERVICE = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb");
-	/*
-	* Mask for UUID
-	 */
+    /**
+     * Nordic Blinky Service UUID
+     */
+    public final static UUID LBS_UUID_SERVICE = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb");
+    /*
+     * Mask for UUID
+     */
     public final static UUID LBS_UUID_SERVICE_MASK = UUID.fromString("0000ff00-0000-0000-0000-00000000000");
-	/**
-	 * BUTTON characteristic UUID
-	 */
-	private final static UUID LBS_UUID_LED_CHAR = UUID.fromString("0000ff03-0000-1000-8000-00805f9b34fb");
-	/**
-	 * LED characteristic UUID
-	 */
-	private final static UUID LBS_UUID_BUTTON_CHAR = UUID.fromString("0000ff02-0000-1000-8000-00805f9b34fb");
+    /**
+     * BUTTON characteristic UUID
+     */
+    private final static UUID GATT_COMMANDCHAHANDLE = UUID.fromString("0000ff03-0000-1000-8000-00805f9b34fb");
+    /**
+     * LED characteristic UUID
+     */
+    private final static UUID GATT_CONDITIONCHAHANDLE = UUID.fromString("0000ff02-0000-1000-8000-00805f9b34fb");
 
-	private BluetoothGattCharacteristic mButtonCharacteristic, mCMDCharacteristic;
+    private BluetoothGattCharacteristic mConditionChaHandle, mCMDCharacteristic;
 
-	public BlinkyManager(final Context context) {
-		super(context);
-	}
+    public BlinkyManager(final Context context) {
+        super(context);
+    }
 
-	@Override
-	protected BleManagerGattCallback getGattCallback() {
-		return mGattCallback;
-	}
+    @Override
+    protected BleManagerGattCallback getGattCallback() {
+        return mGattCallback;
+    }
 
-	@Override
-	protected boolean shouldAutoConnect() {
-		// If you want to connect to the device using autoConnect flag = true, return true here.
-		// Read the documentation of this method.
-		return super.shouldAutoConnect();
-	}
+    @Override
+    protected boolean shouldAutoConnect() {
+        // If you want to connect to the device using autoConnect flag = true, return true here.
+        // Read the documentation of this method.
+        return super.shouldAutoConnect();
+    }
 
-	/**
-	 * BluetoothGatt callbacks for connection/disconnection, service discovery, receiving indication, etc
-	 */
-	private final BleManagerGattCallback mGattCallback = new BleManagerGattCallback() {
+    /**
+     * BluetoothGatt callbacks for connection/disconnection, service discovery, receiving indication, etc
+     */
+    private final BleManagerGattCallback mGattCallback = new BleManagerGattCallback() {
 
-		@Override
-		protected Deque<Request> initGatt(final BluetoothGatt gatt) {
-			final LinkedList<Request> requests = new LinkedList<>();
-			requests.push(Request.newReadRequest(mCMDCharacteristic));
-			requests.push(Request.newReadRequest(mButtonCharacteristic));
-			requests.push(Request.newEnableNotificationsRequest(mButtonCharacteristic));
-			return requests;
-		}
+        @Override
+        protected Deque<Request> initGatt(final BluetoothGatt gatt) {
+            final LinkedList<Request> requests = new LinkedList<>();
+            requests.push(Request.newReadRequest(mCMDCharacteristic));
+            requests.push(Request.newReadRequest(mConditionChaHandle));
+            requests.push(Request.newEnableNotificationsRequest(mConditionChaHandle));
+            return requests;
+        }
 
-		@Override
-		public boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
-			final BluetoothGattService service = gatt.getService(LBS_UUID_SERVICE);
-			if (service != null) {
-				mButtonCharacteristic = service.getCharacteristic(LBS_UUID_BUTTON_CHAR);
-				mCMDCharacteristic = service.getCharacteristic(LBS_UUID_LED_CHAR);
-			}
+        @Override
+        public boolean isRequiredServiceSupported(final BluetoothGatt gatt) {
+            final BluetoothGattService service = gatt.getService(LBS_UUID_SERVICE);
+            if (service != null) {
+                mConditionChaHandle = service.getCharacteristic(GATT_CONDITIONCHAHANDLE);
+                mCMDCharacteristic = service.getCharacteristic(GATT_COMMANDCHAHANDLE);
+            }
 /*
 			boolean writeRequest = false;
 			if (mCMDCharacteristic != null) {
@@ -102,84 +100,89 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
 				writeRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
 			}
 */
-			//return mButtonCharacteristic != null && mCMDCharacteristic != null && writeRequest;
-			return mCMDCharacteristic != null;
-		}
+            //return mConditionChaHandle != null && mCMDCharacteristic != null && writeRequest;
+            return mCMDCharacteristic != null;
+        }
 
-		@Override
-		protected void onDeviceDisconnected() {
-			mButtonCharacteristic = null;
-			mCMDCharacteristic = null;
-		}
+        @Override
+        protected void onDeviceDisconnected() {
+            mConditionChaHandle = null;
+            mCMDCharacteristic = null;
+        }
 
-		@Override
-		protected void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-			final int data = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-			if (characteristic == mCMDCharacteristic) {
-				final boolean ledOn = data == 0x01;
-				log(LogContract.Log.Level.APPLICATION, "LED " + (ledOn ? "ON" : "OFF"));
-				mCallbacks.onDataSent(ledOn);
-			} else {
-				final boolean buttonPressed = data == 0x01;
-				log(LogContract.Log.Level.APPLICATION, "Button " + (buttonPressed ? "pressed" : "released"));
-				mCallbacks.onDataReceived(buttonPressed);
-			}
-			Log.v(TAG,"Callback of Read");
-		}
+        @Override
+        protected void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+            final int data = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+            if (characteristic == mCMDCharacteristic) {
+                log(LogContract.Log.Level.APPLICATION, "mCMDCharacteristic has been read");
+                Log.v(TAG,"mCMDCharacteristic:"+data);
+                //mCallbacks.onDataSent(ledOn);
+            }
+            else if(characteristic == mConditionChaHandle){
+                log(LogContract.Log.Level.APPLICATION, "mConditionChaHandle has ben read");
+                Log.v(TAG,"mConditionChaHandle:"+data);
+            }
+            Log.v(TAG,"Callback of Read");
+        }
 
-		@Override
-		public void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-			// This method is only called for LED characteristic
-			final int data = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-			if (characteristic == mCMDCharacteristic)
+        @Override
+        public void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+            // This method is only called for LED characteristic
+            final int data = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+            if (characteristic == mCMDCharacteristic)
             {
                 final boolean ledOn = (data == 0x01);
                 log(LogContract.Log.Level.APPLICATION, "LED " + (ledOn ? "ON" : "OFF"));
                 mCallbacks.onDataSent(ledOn);
-                Log.v(TAG,"Callback of write");
                 mCallbacks.onHandleCMDtoFF03(data);
             }
-		}
+            Log.v(TAG,"Callback of write");
+        }
 
-		@Override
-		public void onCharacteristicNotified(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-			// This method is only called for Button characteristic
-			final int data = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-			final boolean buttonPressed = data == 0x01;
-			log(LogContract.Log.Level.APPLICATION, "Button " + (buttonPressed ? "pressed" : "released"));
-			mCallbacks.onDataReceived(buttonPressed);
+        @Override
+        public void onCharacteristicNotified(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+            // This method is only called for Button characteristic
+            int data = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+            if (characteristic == mConditionChaHandle)
+            {
+                log(LogContract.Log.Level.APPLICATION, "Status Recieved" + data);
+                mCallbacks.onHandleGetStatus(data);
+                /* Only for debug */
+                //Log.v(TAG,"notify data="+(data & 0xFF));
+                /*****************/
+            }
             Log.v(TAG,"Callback of Notification");
-		}
-	};
+        }
+    };
 
-	public void send(final boolean onOff) {
-		// Are we connected?
+    public void send(final boolean onOff) {
+/*		// Are we connected?
 		if (mCMDCharacteristic == null)
 			return;
-		/* only for test */
-		boolean i=readCharacteristic(mButtonCharacteristic);
+		*//* only for test *//*
+		boolean i=readCharacteristic(mConditionChaHandle);
 		Log.v(TAG,"readCond="+i);
-        int val= mButtonCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8,0);
+        int val= mConditionChaHandle.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8,0);
         Log.v(TAG,"val read="+val);
-        byte[] val2=mButtonCharacteristic.getValue();
+        byte[] val2= mConditionChaHandle.getValue();
         Log.v(TAG,"val read array="+val2[0]);
-        /*****************/
+        *//*****************//*
 		final byte[] command = new byte[] {(byte) (onOff ? 1 : 0)};
 		mCMDCharacteristic.setValue(command);
 		log(LogContract.Log.Level.WARNING, "Turning LED " + (onOff ? "ON" : "OFF") + "...");
-		writeCharacteristic(mCMDCharacteristic);
-	}
+		writeCharacteristic(mCMDCharacteristic);*/
+    }
 
     /*
-    *   This function send cmd to pheripheral device
-    *   it will send to FF03 GATT characteristic.
-    *   @para: cmd : command type to device
-    */
+     *   This function send cmd to pheripheral device
+     *   it will send to FF03 GATT characteristic.
+     *   @para: cmd : command type to device
+     */
     public void sendCMDtoThermostat(int cmd)
     {
         final byte[] command= new byte[] {(byte) cmd};
         mCMDCharacteristic.setValue(command);
-        Log.v(TAG,"send cmd="+command.toString());
+        Log.v(TAG,"send cmd="+ command);
         writeCharacteristic(mCMDCharacteristic);
     }
 
