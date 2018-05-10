@@ -43,7 +43,6 @@
 	<string name="button_pressed">PRESSED</string>
 	<string name="button_released">RELEASED</string>
 	<string name="button_unknown">UNKNOWN</string>
-	<string name="led_summary">Toggle the switch to turn the LED 3 on or off.</string>
 	<string name="button_summary">Press Button 1 on the dev kit.</string>
 
 	<string name="location_permission_title">LOCATION PERMISSION REQUIRED</string>

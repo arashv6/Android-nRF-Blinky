@@ -155,23 +155,6 @@ public class BlinkyManager extends BleManager<BlinkyManagerCallbacks> {
         }
     };
 
-    public void send(final boolean onOff) {
-/*		// Are we connected?
-		if (mCMDCharacteristic == null)
-			return;
-		*//* only for test *//*
-		boolean i=readCharacteristic(mConditionChaHandle);
-		Log.v(TAG,"readCond="+i);
-        int val= mConditionChaHandle.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8,0);
-        Log.v(TAG,"val read="+val);
-        byte[] val2= mConditionChaHandle.getValue();
-        Log.v(TAG,"val read array="+val2[0]);
-        *//*****************//*
-		final byte[] command = new byte[] {(byte) (onOff ? 1 : 0)};
-		mCMDCharacteristic.setValue(command);
-		log(LogContract.Log.Level.WARNING, "Turning LED " + (onOff ? "ON" : "OFF") + "...");
-		writeCharacteristic(mCMDCharacteristic);*/
-    }
 
     /*
      *   This function send cmd to pheripheral device

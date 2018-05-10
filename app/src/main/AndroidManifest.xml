@@ -69,7 +69,7 @@
 			</intent-filter>
 		</activity>
 		<activity
-			android:name=".BlinkyActivity"
+			android:name=".ThermostatActivity"
 			android:launchMode="singleTop">
 		</activity>
 

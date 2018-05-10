@@ -49,7 +49,7 @@ import butterknife.OnClick;
 import no.nordicsemi.android.blinky.adapter.ExtendedBluetoothDevice;
 import no.nordicsemi.android.blinky.viewmodels.BlinkyViewModel;
 
-public class BlinkyActivity extends AppCompatActivity {
+public class ThermostatActivity extends AppCompatActivity {
 	public static final String EXTRA_DEVICE = "no.nordicsemi.android.blinky.EXTRA_DEVICE";
 
 	@Override
@@ -74,9 +74,6 @@ public class BlinkyActivity extends AppCompatActivity {
 		viewModel.connect(device);
 
 		// Set up views
-		final TextView ledState = findViewById(R.id.led_state);
-		final Switch led = findViewById(R.id.led_switch);
-		final TextView buttonState = findViewById(R.id.button_state);
 		final LinearLayout progressContainer = findViewById(R.id.progress_container);
 		final TextView connectionState = findViewById(R.id.connection_state);
 		final View content = findViewById(R.id.device_container);
@@ -86,9 +83,7 @@ public class BlinkyActivity extends AppCompatActivity {
 		final ToggleButton slowStateButton = findViewById(R.id.idSlowtrun);
 		final Button powerButton = findViewById(R.id.idPower);
 
-		led.setOnClickListener((View view) -> {
-			viewModel.toggleLED(led.isChecked());
-		});
+
 		// set onclick in pump  button, it will write cmd to device
 		pumpStateButton.setOnClickListener((View view) -> {
 			viewModel.togglePump(pumpStateButton.isChecked());
@@ -120,14 +115,8 @@ public class BlinkyActivity extends AppCompatActivity {
 				finish();
 			}
 		});
-		// Create observer on LED view by @mLEDState
-		viewModel.getLEDState().observe(this, isOn -> {
-			ledState.setText(isOn ? R.string.turn_on : R.string.turn_off);
-			led.setChecked(isOn);
-		});
-		// Create Observer on button by mButtonState
-		viewModel.getButtonState().observe(this,
-				pressed -> buttonState.setText(pressed ? R.string.button_pressed : R.string.button_released));
+
+
 
 		// Create observer on SLOWTURN button view by @mSLOWState
 		viewModel.getSLOWState().observe(this, isOn -> {
